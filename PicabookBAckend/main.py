@@ -1,5 +1,5 @@
 from fastapi import FastAPI, UploadFile, File
-from fastapi.responses import Response
+from fastapi.responses import Response, HTMLResponse
 from fastapi.middleware.cors import CORSMiddleware
 from PIL import Image
 import io, os
@@ -14,6 +14,12 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+@app.get("/", response_class=HTMLResponse)
+async def home():
+    return """
+    <h2>PickABook Backend is Running Successfully 🎉</h2>
+    <p>Use POST /generate to upload an image.</p>
+    """
 
 TEMPLATE_PATH = "template/template.png"
 
@@ -32,7 +38,10 @@ def cartoonize(img: Image.Image):
 
     gray = cv2.cvtColor(cv_img, cv2.COLOR_BGR2GRAY)
     blur = cv2.medianBlur(gray, 7)
-    edges = cv2.adaptiveThreshold(blur,255,cv2.ADAPTIVE_THRESH_MEAN_C,cv2.THRESH_BINARY,9,2)
+    edges = cv2.adaptiveThreshold(
+        blur, 255, cv2.ADAPTIVE_THRESH_MEAN_C,
+        cv2.THRESH_BINARY, 9, 2
+    )
 
     color = cv2.cvtColor(cv_img, cv2.COLOR_BGR2RGB)
     edges = cv2.cvtColor(edges, cv2.COLOR_GRAY2RGB)
@@ -66,3 +75,4 @@ async def generate(file: UploadFile = File(...)):
     buf.seek(0)
 
     return Response(content=buf.getvalue(), media_type="image/png")
+
